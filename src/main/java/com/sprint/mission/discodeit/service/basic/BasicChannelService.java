@@ -37,24 +37,21 @@ public class BasicChannelService implements ChannelService {
   @Transactional
   @Override
   public ChannelDto create(PublicChannelCreateRequest request) {
+    log.debug("공개 채널 생성 시작: {}", request);
     String name = request.name();
     String description = request.description();
-
-    log.debug("공개 채널 생성 요청: name={}", name);
 
     Channel channel = new Channel(ChannelType.PUBLIC, name, description);
 
     channelRepository.save(channel);
-
     log.info("공개 채널 생성 완료: channelId={}, name={}", channel.getId(), name);
-
     return channelMapper.toDto(channel);
   }
 
   @Override
   @Transactional
   public ChannelDto create(PrivateChannelCreateRequest request) {
-    log.debug("비공개 채널 생성 요청: participantCount={}", request.participantIds().size());
+    log.debug("비공개 채널 생성 시작: {}", request);
 
     Channel channel = new Channel(ChannelType.PRIVATE, null, null);
     channelRepository.save(channel);
@@ -64,8 +61,8 @@ public class BasicChannelService implements ChannelService {
         .toList();
     readStatusRepository.saveAll(readStatuses);
 
-    log.info("비공개 채널 생성 완료: channelId={}, participantCount={}",
-        channel.getId(), readStatuses.size());
+    log.info("비공개 채널 생성 완료: channelId={}, name={}",
+        channel.getId(), channel.getName());
 
     return channelMapper.toDto(channel);
   }
@@ -75,7 +72,7 @@ public class BasicChannelService implements ChannelService {
   public ChannelDto find(UUID channelId) {
     return channelRepository.findById(channelId)
         .map(channelMapper::toDto)
-        .orElseThrow(() -> new ChannelNotFoundException(channelId));
+        .orElseThrow(() -> ChannelNotFoundException.withId(channelId));
   }
 
   @Override
@@ -95,43 +92,34 @@ public class BasicChannelService implements ChannelService {
   @Override
   @Transactional
   public ChannelDto update(UUID channelId, PublicChannelUpdateRequest request) {
+    log.debug("채널 수정 시작: channelId={}, request={}", channelId, request);
     String newName = request.newName();
     String newDescription = request.newDescription();
 
-    log.debug("채널 수정 요청: channelId={}, newName={}", channelId, newName);
-
     Channel channel = channelRepository.findById(channelId)
-        .orElseThrow(() -> {
-          log.warn("채널 수정 실패 - 채널을 찾을 수 없음: channelId={}", channelId);
-          return new ChannelNotFoundException(channelId);
-        });
+        .orElseThrow(() -> ChannelNotFoundException.withId(channelId));
     if (channel.getType().equals(ChannelType.PRIVATE)) {
-      log.warn("채널 수정 실패 - 비공개 채널은 수정할 수 없음: channelId={}", channelId);
-      throw new PrivateChannelUpdateException(channelId);
+      throw PrivateChannelUpdateException.forChannel(channelId);
     }
 
     channel.update(newName, newDescription);
-
     log.info("채널 수정 완료: channelId={}, name={}", channelId, newName);
-
     return channelMapper.toDto(channel);
   }
 
   @Override
   @Transactional
   public void delete(UUID channelId) {
-    log.debug("채널 삭제 요청: channelId={}", channelId);
+    log.debug("채널 삭제 시작: channelId={}", channelId);
 
     if (!channelRepository.existsById(channelId)) {
-      log.warn("채널 삭제 실패 - 채널을 찾을 수 없음: channelId={}", channelId);
-      throw new ChannelNotFoundException(channelId);
+      throw ChannelNotFoundException.withId(channelId);
     }
 
     messageRepository.deleteAllByChannelId(channelId);
     readStatusRepository.deleteAllByChannelId(channelId);
 
     channelRepository.deleteById(channelId);
-
     log.info("채널 삭제 완료: channelId={}", channelId);
   }
 }

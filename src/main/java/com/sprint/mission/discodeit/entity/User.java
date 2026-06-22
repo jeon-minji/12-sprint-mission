@@ -51,14 +51,12 @@ public class User extends BaseUpdatableEntity {
     if (newUsername != null && !newUsername.equals(this.username)) {
       this.username = newUsername;
     }
-
     if (newEmail != null && !newEmail.equals(this.email)) {
       this.email = newEmail;
     }
     if (newPassword != null && !newPassword.equals(this.password)) {
       this.password = newPassword;
     }
-
     if (newProfile != null) {
       this.profile = newProfile;
     }

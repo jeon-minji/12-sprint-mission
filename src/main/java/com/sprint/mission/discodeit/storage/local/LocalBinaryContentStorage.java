@@ -22,12 +22,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
 
-@Slf4j
 @Component
-@ConditionalOnProperty(
-    name = "discodeit.storage.type",
-    havingValue = "local"
-)
+@ConditionalOnProperty(name = "discodeit.storage.type", havingValue = "local")
 public class LocalBinaryContentStorage implements BinaryContentStorage {
 
   private final Path root;
@@ -51,22 +47,15 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
   }
 
   public UUID put(UUID binaryContentId, byte[] bytes) {
-    log.debug("파일 업로드 요청: fileId={}, size={}", binaryContentId, bytes.length);
-
     Path filePath = resolvePath(binaryContentId);
     if (Files.exists(filePath)) {
-      log.warn("파일 업로드 실패 - 이미 존재하는 파일: fileId={}", binaryContentId);
       throw new IllegalArgumentException("File with key " + binaryContentId + "already exists");
     }
     try (OutputStream outputStream = Files.newOutputStream(filePath)) {
       outputStream.write(bytes);
     } catch (IOException e) {
-      log.error("파일 업로드 실패 - 파일 저장 중 오류: fileId={}", binaryContentId, e);
       throw new RuntimeException(e);
     }
-
-    log.info("파일 업로드 완료: fileId={}, size={}", binaryContentId, filePath);
-
     return binaryContentId;
   }
 
@@ -89,13 +78,8 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
 
   @Override
   public ResponseEntity<Resource> download(BinaryContentDto metaData) {
-    log.debug("파일 다운로드 요청: fileId={}, fileName={}", metaData.id(), metaData.fileName());
-
     InputStream inputStream = get(metaData.id());
     Resource resource = new InputStreamResource(inputStream);
-
-    log.info("파일 다운로드 응답 생성 완료: fileId={}, fileName={}, size={}",
-        metaData.id(), metaData.fileName(), metaData.size());
 
     return ResponseEntity
         .status(HttpStatus.OK)

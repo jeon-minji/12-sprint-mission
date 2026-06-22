@@ -10,11 +10,9 @@ public record BinaryContentCreateRequest(
     String fileName,
 
     @NotBlank(message = "콘텐츠 타입은 필수입니다.")
-    @Size(max = 100, message = "콘텐츠 타입은 100자 이하로 입력해주세요.")
     String contentType,
 
     @NotNull(message = "파일 데이터는 필수입니다.")
-    @Size(min = 1, message = "파일 데이터는 비어 있을 수 없습니다.")
     byte[] bytes
 ) {
 

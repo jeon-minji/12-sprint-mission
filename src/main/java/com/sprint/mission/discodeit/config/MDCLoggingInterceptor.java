@@ -3,17 +3,20 @@ package com.sprint.mission.discodeit.config;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-@Component
+// 요청마다 MDC에 컨텍스트 정보를 추가하는 인터셉터
+@Slf4j
 public class MDCLoggingInterceptor implements HandlerInterceptor {
 
+  // MDC 로깅에 사용되는 상수 정의
   private static final String REQUEST_ID = "requestId";
   private static final String REQUEST_METHOD = "requestMethod";
   private static final String REQUEST_URL = "requestUrl";
-  private static final String RESPONSE_HEADER_REQUEST_ID = "Discodeit-Request-ID";
+  private static final String REQUEST_ID_HEADER = "Discodeit-Request-ID";
 
   @Override
   public boolean preHandle(
@@ -21,14 +24,17 @@ public class MDCLoggingInterceptor implements HandlerInterceptor {
       HttpServletResponse response,
       Object handler
   ) {
-    String requestId = UUID.randomUUID().toString();
+    // 요청 ID 생성(UUID)
+    String requestId = UUID.randomUUID().toString().replaceAll("-", "");
 
     MDC.put(REQUEST_ID, requestId);
     MDC.put(REQUEST_METHOD, request.getMethod());
     MDC.put(REQUEST_URL, request.getRequestURI());
 
-    response.setHeader(RESPONSE_HEADER_REQUEST_ID, requestId);
+    // 응답 헤더에 요청 ID 추가
+    response.setHeader(REQUEST_ID_HEADER, requestId);
 
+    log.debug("Request started");
     return true;
   }
 
@@ -39,6 +45,8 @@ public class MDCLoggingInterceptor implements HandlerInterceptor {
       Object handler,
       Exception ex
   ) {
+    // 요청 처리 후 MDC 데이터 정리
+    log.debug("Request completed");
     MDC.clear();
   }
 }
